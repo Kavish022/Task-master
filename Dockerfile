@@ -16,7 +16,7 @@ RUN npm run build
 # ==========================================
 # STAGE 2: Production Nginx Server
 # ==========================================
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 # Copy custom Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
