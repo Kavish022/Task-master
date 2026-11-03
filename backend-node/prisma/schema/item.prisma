@@ -1,0 +1,33 @@
+// ==========================================
+// ITEM DOMAIN (CATALOG / WORK ITEMS)
+// ==========================================
+
+enum ItemStatus {
+  draft
+  in_progress
+  completed
+}
+
+enum ItemPriority {
+  low
+  medium
+  high
+}
+
+model Item {
+  id          Int          @id @default(autoincrement())
+  userId      Int?
+  title       String       @db.VarChar(255)
+  description String?      @db.Text
+  status      ItemStatus   @default(draft)
+  priority    ItemPriority @default(medium)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([userId, createdAt])
+  @@map("items")
+}
+

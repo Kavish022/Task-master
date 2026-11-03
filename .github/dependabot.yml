@@ -1,0 +1,45 @@
+version: 2
+updates:
+  # Maintain dependencies for Root (React Vite SPA Frontend)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Maintain dependencies for Node.js REST Backend
+  - package-ecosystem: "npm"
+    directory: "/backend-node"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+
+  # Maintain Dockerfile base images & Actions
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/backend-node"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "docker"
+
+  # Maintain GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci/cd"
+

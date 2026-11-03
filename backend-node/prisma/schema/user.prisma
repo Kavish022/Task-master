@@ -1,0 +1,46 @@
+// ==========================================
+// USER & AUTHENTICATION
+// ==========================================
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String
+  passwordHash    String
+  avatarUrl       String?           @db.VarChar(500)
+  accountStatus   UserAccountStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Multi-tenant & Task Relations
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[] @relation("UserMemberships")
+  invitedMembers  WorkspaceMember[] @relation("InvitedMembers")
+  assignedTasks   Task[]            @relation("TaskAssignee")
+  createdTasks    Task[]            @relation("TaskCreator")
+  comments        Comment[]
+  attachments     Attachment[]
+  taskHistories   TaskHistory[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+  refreshTokens   RefreshToken[]
+  items           Item[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.VarChar(500)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

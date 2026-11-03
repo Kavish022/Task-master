@@ -1,0 +1,43 @@
+// ==========================================
+// COMMENTS & COLLABORATION
+// ==========================================
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  content   String    @db.Text
+  isEdited  Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([userId])
+  @@map("comments")
+}
+
+// ==========================================
+// ATTACHMENTS
+// ==========================================
+
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  taskId     Int
+  uploadedBy Int
+  fileName   String   @db.VarChar(255)
+  mimeType   String   @db.VarChar(100)
+  sizeBytes  Int
+  storageKey String   @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@index([uploadedBy])
+  @@map("attachments")
+}

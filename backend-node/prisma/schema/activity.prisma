@@ -1,0 +1,54 @@
+// ==========================================
+// AUDIT TRAILS: TASK HISTORY & ACTIVITY LOG
+// ==========================================
+
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  changedBy Int
+  fieldName String   @db.VarChar(64)
+  oldValue  String?  @db.Text
+  newValue  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([changedBy])
+  @@map("task_histories")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  workspaceId Int
+  userId      Int
+  action      String   @db.VarChar(64)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId])
+  @@map("activity_logs")
+}
+
+// ==========================================
+// NOTIFICATIONS
+// ==========================================
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  eventType String    @db.VarChar(64)
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}

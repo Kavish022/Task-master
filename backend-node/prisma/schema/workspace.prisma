@@ -1,0 +1,47 @@
+// ==========================================
+// WORKSPACE & MULTI-TENANCY
+// ==========================================
+
+model Workspace {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(120)
+  description String?   @db.Text
+  ownerId     Int
+  owner       User      @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  settings    Json?
+  timezone    String    @default("UTC") @db.VarChar(64)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  members      WorkspaceMember[]
+  projects     Project[]
+  labels       Label[]
+  activityLogs ActivityLog[]
+
+  @@index([ownerId])
+  @@index([deletedAt])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id               Int              @id @default(autoincrement())
+  workspaceId      Int
+  userId           Int
+  role             WorkspaceRole    @default(MEMBER)
+  membershipStatus MembershipStatus @default(ACTIVE)
+  invitedBy        Int?
+  joinedAt         DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  inviter   User?     @relation("InvitedMembers", fields: [invitedBy], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId], name: "uq_workspace_member")
+  @@index([userId, membershipStatus])
+  @@index([workspaceId, role])
+  @@map("workspace_members")
+}

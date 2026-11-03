@@ -1,0 +1,96 @@
+// ==========================================
+// TASK & KANBAN CORE
+// ==========================================
+
+model Task {
+  id               Int          @id @default(autoincrement())
+  projectId        Int
+  taskKey          String       @db.VarChar(20)
+  title            String       @db.VarChar(255)
+  description      String?      @db.Text
+  status           TaskStatus   @default(TODO)
+  priority         TaskPriority @default(MEDIUM)
+  position         Decimal      @default(65535.0000) @db.Decimal(12, 4)
+  parentTaskId     Int?
+  estimatedMinutes Int?
+  actualMinutes    Int?
+  assigneeId       Int?
+  creatorId        Int
+  startDate        DateTime?
+  dueDate          DateTime?
+  completedAt      DateTime?
+  version          Int          @default(1)
+  deletedAt        DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentTask   Task?              @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  subtasks     Task[]             @relation("TaskSubtasks")
+  assignee     User?              @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  creator      User               @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  labels       TaskLabelMapping[]
+  comments     Comment[]
+  attachments  Attachment[]
+  history      TaskHistory[]
+  dependencies TaskDependency[]   @relation("TaskDependencies")
+  dependentOn  TaskDependency[]   @relation("TaskDependentOn")
+
+  // High-performance Composite Indexes
+  @@index([projectId, status, position, deletedAt])
+  @@index([assigneeId, status, dueDate, deletedAt])
+  @@index([projectId, taskKey])
+  @@index([parentTaskId])
+  @@map("tasks")
+}
+
+// ==========================================
+// LABELS & MANY-TO-MANY MAPPING
+// ==========================================
+
+model Label {
+  id          Int      @id @default(autoincrement())
+  workspaceId Int
+  name        String   @db.VarChar(50)
+  color       String   @default("#6B7280") @db.VarChar(7)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     TaskLabelMapping[]
+
+  @@unique([workspaceId, name], name: "uq_workspace_label_name")
+  @@index([workspaceId])
+  @@map("labels")
+}
+
+model TaskLabelMapping {
+  taskId    Int
+  labelId   Int
+  createdAt DateTime @default(now())
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([labelId])
+  @@map("task_label_mappings")
+}
+
+// ==========================================
+// DEPENDENCIES
+// ==========================================
+
+model TaskDependency {
+  id              Int            @id @default(autoincrement())
+  taskId          Int
+  dependsOnTaskId Int
+  type            DependencyType @default(BLOCKED_BY)
+  createdAt       DateTime       @default(now())
+
+  task          Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask Task @relation("TaskDependentOn", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId], name: "uq_task_dependency")
+  @@index([dependsOnTaskId])
+  @@map("task_dependencies")
+}

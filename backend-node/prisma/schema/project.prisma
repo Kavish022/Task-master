@@ -1,0 +1,26 @@
+// ==========================================
+// PROJECT
+// ==========================================
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  workspaceId Int
+  name        String        @db.VarChar(150)
+  key         String        @db.VarChar(10)
+  description String?       @db.Text
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?
+  targetDate  DateTime?
+  archivedAt  DateTime?
+  settings    Json?
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([workspaceId, key], name: "uq_workspace_project_key")
+  @@index([workspaceId, status, deletedAt])
+  @@map("projects")
+}

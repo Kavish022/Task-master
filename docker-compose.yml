@@ -1,0 +1,76 @@
+services:
+  # ==========================================
+  # Database Service (MySQL 8)
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: kanban_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
+      MYSQL_DATABASE: ${DB_NAME:-kanban_core_db}
+      MYSQL_USER: ${DB_USER:-kanban_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-kanban_secret_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ==========================================
+  # Backend API Service (Node.js + Prisma)
+  # ==========================================
+  backend-node:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: kanban_backend_node
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: mysql://${DB_USER:-kanban_user}:${DB_PASSWORD:-kanban_secret_pass}@mysql:3306/${DB_NAME:-kanban_core_db}
+      JWT_SECRET: ${JWT_SECRET:-prod-jwt-secret-replace-in-env-file-12345}
+      JWT_EXPIRES_IN: "15m"
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-prod-refresh-secret-replace-in-env-file-67890}
+      JWT_REFRESH_EXPIRES_IN: "7d"
+      CORS_ORIGIN: "http://localhost:3000,http://localhost"
+    ports:
+      - "5001:5001"
+    networks:
+      - app_network
+
+  # ==========================================
+  # Frontend Service (React SPA + Nginx)
+  # ==========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kanban_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend-node
+    ports:
+      - "3000:80"
+    networks:
+      - app_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+
